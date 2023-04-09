@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Bootstrap demo</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-KK94CHFLLe+nY2dmCWGMq91rCGa5gtU4mk92HdvYe+M/SXH301p5ILy+dN9+nJOZ"
+      crossorigin="anonymous"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@100;200;300;400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css"
+    />
+    <style>
+      body {
+        font-family: "Outfit", sans-serif;
+      }
+
+      .form-container {
+        width: 37.5rem;
+        margin: 2rem auto;
+      }
+    </style>
+  </head>
+  <body>
+    <nav class="navbar navbar-expand-lg bg-body-tertiary">
+      <div class="container-fluid">
+        <a class="navbar-brand" href="/">GoAuth</a>
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#navbarNavDropdown"
+          aria-controls="navbarNavDropdown"
+          aria-expanded="false"
+          aria-label="Toggle navigation"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNavDropdown">
+          <ul class="navbar-nav">
+            <li class="nav-item">
+              <a
+                class="nav-link active"
+                aria-current="page"
+                href="/signin.html"
+                >Signin</a
+              >
+            </li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+
+    <main class="container">
+      <h1 class="text-center pt-5">Verify Email</h1>
+
+      <!-- show message in card that  a email has been sent to your mail which you neeed to authorize -->
+      <div class="form-container">
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title">Verify Email</h5>
+            <p class="card-text">
+              A verification email has been sent to your email address. Please
+              verify your email address to continue.
+            </p>
+            <button id="resendMailBtn" class="btn btn-primary">
+              Resend Email
+            </button>
+            <button
+              id="continueAfterVerificationBtn"
+              class="btn btn-outline-success"
+            >
+              I have verified my email
+            </button>
+          </div>
+        </div>
+      </div>
+    </main>
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"
+      integrity="sha384-ENjdO4Dr2bkBIFxQpeoTz1HIcje39Wm4jDKdf19U8gI4ddQ3GYNS7NTKfAdVQSZe"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      type="text/javascript"
+      src="https://cdn.jsdelivr.net/npm/toastify-js"
+    ></script>
+    <script>
+      const resendMailBtn = document.getElementById("resendMailBtn");
+      const continueAfterVerificationBtn = document.getElementById(
+        "continueAfterVerificationBtn"
+      );
+
+      resendMailBtn.addEventListener("click", () => {
+        resendMail();
+      });
+
+      continueAfterVerificationBtn.addEventListener("click", () => {
+        continueAfterVerification();
+      });
+
+      async function resendMail() {
+        try {
+          const token = localStorage.getItem("token");
+          const response = await fetch("/api/user-activation/resend", {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: "Bearer " + token,
+            },
+          });
+          const data = await response.json();
+          if (response.status === 200) {
+            if (data["msg"]) {
+              showToast(data["msg"], "info");
+            } else {
+              showToast(data["msg"], "error");
+            }
+          } else {
+            showToast(data.message, "error");
+          }
+        } catch (error) {
+          console.log(error);
+        }
+      }
+
+      async function continueAfterVerification() {
+        try {
+          const token = localStorage.getItem("token");
+          const response = await fetch("/api/user-activation/check", {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: "Bearer " + token,
+            },
+          });
+          const data = await response.json();
+          if (response.status === 200) {
+            if (data["is_user_verified"]) {
+              showToast("Email Verified!", "success");
+              setTimeout(() => {
+                window.location.href = "/";
+              }, 2000);
+            } else {
+              showToast("Email not verified yet!", "error");
+            }
+          } else {
+            showToast(data.message, "error");
+          }
+        } catch (error) {
+          console.log(error);
+        }
+      }
+
+      function showToast(message, type) {
+        let colorCode;
+
+        if (message === undefined) {
+          message = "Something went wrong! Please try again";
+        }
+
+        if (type === "success") {
+          colorCode = "#00b894";
+        } else if (type === "info") {
+          colorCode = "#0984e3";
+        } else {
+          colorCode = "#ff5f6d";
+        }
+
+        Toastify({
+          text: message,
+          duration: 2000,
+          newWindow: true,
+          close: true,
+          gravity: "bottom",
+          position: "right", 
+          stopOnFocus: true,
+          style: {
+            background: colorCode,
+          },
+        }).showToast();
+      }
+    </script>
+  </body>
+</html>

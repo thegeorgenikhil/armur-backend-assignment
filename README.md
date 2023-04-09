@@ -2,7 +2,7 @@
 
 ## Introduction
 
-This is a backend assignment for ArmurAI. It is a simple Golang based backend server along with the following features:
+This is a backend assignment for ArmurAI. It is a simple Golang based backend server with the following features:
 
 1. Login
 2. Logout
@@ -207,9 +207,9 @@ _Status: 200 OK_
 
 ### Verify Activation Email
 
-Verifies the user's email address by sending a verification link to the user's email address.
+Verifies the user's email address by sending a verification link 
 
-verification link: `GET /api/user-activation/verify?token=<user-verification-token>`
+Verification link: `GET /api/user-activation/verify?token=<user-verification-token>`
 
 #### Response
 
@@ -243,7 +243,7 @@ _Status: 200 OK_
 
 ### Resend Verification Email
 
-Resends the verification email to the user's email address. **It has a rate limit of 1 email per 5 minutes.**
+Resends the verification email to the user's email address. **It has a user specific rate limit of 1 email per 5 minutes.**
 
 `GET /api/user-activation/resend`
 
