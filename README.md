@@ -27,6 +27,13 @@ Packages used:
 
 ## Installation
 
+> For this to work you need to have Go 1.16 or above installed on your system. You can download it from [here](https://golang.org/dl/) or you can use a docker container with Go image.
+
+### Prerequisites
+
+- Go 1.16 or above
+- Git
+
 1. Clone the repository
 
 ```bash
@@ -207,7 +214,7 @@ _Status: 200 OK_
 
 ### Verify Activation Email
 
-Verifies the user's email address by sending a verification link 
+Verifies the user's email address by sending a verification link
 
 Verification link: `GET /api/user-activation/verify?token=<user-verification-token>`
 
