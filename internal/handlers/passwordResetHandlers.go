@@ -38,12 +38,20 @@ func ForgotPassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// if user has already requested for a password reset token before, we will remove the previous token and generate a new one
+	err = database.RemoveResetPasswordTokenFromDB(database.DB, forgotPasswordRequest.Email)
+
+	if err != nil {
+		utils.RepondWithError(w, err, "Some issues with the sever. Please try again", http.StatusInternalServerError)
+		return
+	}
+
 	// we are using jwt to generate a random set of characters which will be used as the password reset token
 	passwordResetToken := jwt.GenerateToken(forgotPasswordRequest.Email, jwt.PasswordResetTokenDuration)
 
 	passwordResetToken = strings.Split(passwordResetToken, ".")[0]
 
-	passwordResetToken, err = bcrypt.HashPassword(passwordResetToken)
+	hashedResetToken, err := bcrypt.HashPassword(passwordResetToken)
 
 	// password reset token will be valid for 10 minutes
 	tokenDuration := time.Now().Add(jwt.PasswordResetTokenDuration).Unix()
@@ -53,7 +61,7 @@ func ForgotPassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = database.InsertResetPasswordTokenInDB(database.DB, forgotPasswordRequest.Email, passwordResetToken, tokenDuration)
+	err = database.InsertResetPasswordTokenInDB(database.DB, forgotPasswordRequest.Email, hashedResetToken, tokenDuration)
 
 	if err != nil {
 		utils.RepondWithError(w, err, "Some issues with the sever. Please try again", http.StatusInternalServerError)
@@ -61,7 +69,7 @@ func ForgotPassword(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// sending the password reset token to the user's email with the token we just generated
-	err = utils.SendPasswordResetEmail(forgotPasswordRequest.Email, passwordResetToken)
+	err = utils.SendPasswordResetEmail(forgotPasswordRequest.Email, hashedResetToken)
 
 	if err != nil {
 		log.Println(err)
@@ -116,6 +124,11 @@ func ResetPassword(w http.ResponseWriter, r *http.Request) {
 
 	if resetTokenDuration < time.Now().Unix() {
 		utils.RepondWithError(w, err, "Reset password token expired. Please request for a new one", http.StatusNotFound)
+		return
+	}
+
+	if resetToken != resetPasswordRequest.ResetToken {
+		utils.RepondWithError(w, err, "Invalid reset password token", http.StatusNotFound)
 		return
 	}
 

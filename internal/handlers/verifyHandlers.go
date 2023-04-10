@@ -69,18 +69,42 @@ func ResendUserVerificationEmail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	userVerificationToken := jwt.GenerateToken(user.Email, jwt.UserActivationTokenDuration)
+
 	claims, err := jwt.ValidateToken(user.UserVerificationToken.String)
 
-	// check if the user has already requested for a new verification email in the last 5 minutes
-	secondsPassed := time.Now().Unix()-claims.ExpiresAt > 300
+	if err != nil {
+		err = utils.SendUserVerificationEmail(user.Email, userVerificationToken)
+		if err != nil {
+			log.Println(err)
+		}
+		response := models.Response{
+			Msg: "Resent verification email. Please check your registered email",
+		}
 
-	if err == nil && !secondsPassed {
-		utils.RepondWithError(w, err, "Too many requests. Please wait for 5 minutes before requesting for a new verification email", http.StatusTooManyRequests)
+		err = database.UpdateVerificationTokenInDB(database.DB, user.Email, userVerificationToken)
+
+		if err != nil {
+			utils.RepondWithError(w, err, "Some issues with the sever. Please try again", http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(response)
 		return
 	}
 
-	userVerificationToken := jwt.GenerateToken(user.Email, jwt.UserActivationTokenDuration)
+	// check if the user has already requested for a new verification email in the last 5 minutes
+	secondsPassed := time.Now().Unix()-claims.IssuedAt > 300
+
+	if !secondsPassed {
+		utils.RepondWithError(w, err, "Too many requests in a short time. Please try again after 5 minutes", http.StatusTooManyRequests)
+		return
+	}
+
 	err = utils.SendUserVerificationEmail(user.Email, userVerificationToken)
+
 	if err != nil {
 		log.Println(err)
 	}
